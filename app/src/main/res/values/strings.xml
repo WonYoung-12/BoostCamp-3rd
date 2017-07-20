@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">BoostCamp-3rd</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
+
+    <string name="project_name">맛집 등록</string>
+    <string name="close_btn">닫기</string>
+    <string name="prev">이전</string>
+    <string name="next">다음</string>
+    <string name="text_count">글자수 : 0/500</string>
+</resources>
