@@ -2,6 +2,8 @@ package com.example.kwy2868.boostcamp_3rd.View;
 
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -18,13 +20,18 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.kwy2868.boostcamp_3rd.Model.Restaurant;
 import com.example.kwy2868.boostcamp_3rd.R;
+import com.google.android.gms.maps.model.LatLng;
+
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-public class MainActivity extends AppCompatActivity{
+public class MainActivity extends AppCompatActivity
+        implements EnrollFragment.RestaurantEnrollListener, GoogleMapFragment.MapFragmentListener{
     @BindView(R.id.toolbar)
     Toolbar toolbar;
     @BindView(R.id.drawer_layout)
@@ -47,7 +54,7 @@ public class MainActivity extends AppCompatActivity{
 
     private static final int FRAGMENT_CONTATINER = R.id.fragment_show;
 
-
+    private static String TAG = "ADDRESS";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -119,8 +126,9 @@ public class MainActivity extends AppCompatActivity{
 
         fragmentTransaction = fragmentManager.beginTransaction();
 
-//        googleMapFragment = new GoogleMapFragment();
+        // 일단은 만들어주자.
         enrollFragment = new EnrollFragment();
+        googleMapFragment = new GoogleMapFragment();
 
         // 배열에 담아 놓고 나중에 리턴해줄까?
 //        fragmentArray[MAP_FRAGMENT] = googleMapFragment;
@@ -139,5 +147,77 @@ public class MainActivity extends AppCompatActivity{
         intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
         intent.addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
         startActivityForResult(intent, REQUEST_CODE);
+    }
+
+    @Override
+    public void RestaurantEnroll(Restaurant restaurant) {
+        Log.d("레스토랑등록 리스너 테스트", "잘 된다.");
+//        enrollFragment.showMapFragment(restaurant);
+        // DB에서 꺼내오는 거면 사실상 이거도 필요 없을 것 같긴하다..?
+        Bundle bundle = new Bundle();
+        bundle.putParcelable("RESTAURANT", restaurant);
+        googleMapFragment.setArguments(bundle);
+//        Toast.makeText(getContext(), "프래그먼트 바꿔줘야지", Toast.LENGTH_SHORT).show();
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.replace(FRAGMENT_CONTATINER, googleMapFragment);
+        fragmentTransaction.addToBackStack(null);
+        fragmentTransaction.commit();
+    }
+
+    @Override
+    public void MapClickEnroll(LatLng latLng) {
+
+        Address address = null;
+
+        // 지오코더 사용해서 좌표를 바꿔준다.
+        try {
+            List<Address> addressList = new Geocoder(this).getFromLocation(latLng.latitude, latLng.longitude, 5);
+            if (addressList != null) {
+                // 처음 것을 이용한다.
+                address = addressList.get(0);
+                // 맛집 등록 창으로 전환.
+            }
+        } catch (Exception e) {
+            Log.e("Exception 발생", e + " ");
+        }
+        Bundle bundle = new Bundle();
+        bundle.putParcelable(TAG, address);
+        enrollFragment.setArguments(bundle);
+        // 백버튼 눌렀을 때 처리가 추가로 필요할 듯.
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        // 현재 붙어 있는 프래그먼트 가져온다.
+        Fragment fragment = fragmentManager.findFragmentById(FRAGMENT_CONTATINER);
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        Log.d("Fragment", fragment.toString());
+
+        fragmentTransaction.replace(FRAGMENT_CONTATINER, enrollFragment);
+        fragmentTransaction.addToBackStack(null);
+        fragmentTransaction.commit();
+    }
+
+    @Override
+    public void AfterEnrollButtonClick() {
+        Toast.makeText(this, "다른 맛집을 등록하시겠습니까?", Toast.LENGTH_LONG).show();
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        // 현재 붙어 있는 프래그먼트 가져온다.
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+        fragmentTransaction.replace(FRAGMENT_CONTATINER, enrollFragment);
+        fragmentTransaction.addToBackStack(null);
+        fragmentTransaction.commit();
+    }
+
+    @Override
+    public void AfterMarkerDrag(Address address) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        // 현재 붙어 있는 프래그먼트 가져온다.
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        Bundle bundle = new Bundle();
+        bundle.putParcelable(TAG, address);
+        enrollFragment.setArguments(bundle);
+        fragmentTransaction.replace(FRAGMENT_CONTATINER, enrollFragment);
+        fragmentTransaction.addToBackStack(null);
+        fragmentTransaction.commit();
     }
 }

@@ -1,6 +1,7 @@
 package com.example.kwy2868.boostcamp_3rd.View;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.location.Address;
@@ -10,25 +11,23 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.kwy2868.boostcamp_3rd.DB.DBHelper;
-import com.example.kwy2868.boostcamp_3rd.MapClickListener;
+import com.example.kwy2868.boostcamp_3rd.EnrollRestaurantByButtonClickListener;
 import com.example.kwy2868.boostcamp_3rd.Model.Restaurant;
 import com.example.kwy2868.boostcamp_3rd.R;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.UiSettings;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -36,13 +35,18 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import java.util.List;
 import java.util.Locale;
 
+import static android.os.Build.VERSION_CODES.M;
+
 
 /**
  * Created by kwy2868 on 2017-07-17.
  */
 
 public class GoogleMapFragment extends Fragment
-        implements OnMapReadyCallback, MapClickListener {
+        implements OnMapReadyCallback, EnrollRestaurantByButtonClickListener {
+
+    // 맵프래그먼트 아래에 있는 다음(등록) 버튼.
+    private Button enrollButton;
 
     private static final int REQUEST_CODE = 0;
     private static final String TAG = "GoogleMapFragment";
@@ -54,25 +58,33 @@ public class GoogleMapFragment extends Fragment
 
     private static final int FRAGMENT_CONTATINER = R.id.fragment_show;
 
-    // 프래그먼트 전환 되었을 때 사용하는 변수.
-    private UiSettings uiSettings;
-
     private Geocoder geocoder;
 
     private static DBHelper dbHelper;
 
+    // 검색한 장소가 지오코딩을 통해 변환이 가능한지 체크하기 위한 변수.
+    private boolean restaurantExist = false;
+    // 위의 변수를 사용하여 이 레스토랑 모델을 DB에 넣을지 말지 체크하자.
+    private Restaurant enrollRestaurant;
 
-    public GoogleMapFragment() {
+    // 액티비티와 프래그먼트 통신을 위함.
+    public interface MapFragmentListener{
+        void MapClickEnroll(LatLng latLng);
+        void AfterEnrollButtonClick();
+        void AfterMarkerDrag(Address address);
     }
 
-    public static GoogleMapFragment newInstance(Restaurant restaurant) {
-        GoogleMapFragment googleMapFragment = new GoogleMapFragment();
+    MapFragmentListener mapFragmentListener;
 
-        Bundle bundle = new Bundle();
-        bundle.putParcelable("RESTAURANT", restaurant);
-        googleMapFragment.setArguments(bundle);
+    public GoogleMapFragment() {
+        Log.d("맵 프로그먼트 생성", "씨발");
+    }
 
-        return googleMapFragment;
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        if(context instanceof MapFragmentListener)
+            mapFragmentListener = (MapFragmentListener)context;
     }
 
     @Nullable
@@ -80,7 +92,13 @@ public class GoogleMapFragment extends Fragment
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_map, container, false);
         mapText = view.findViewById(R.id.map_text);
-
+        enrollButton = view.findViewById(R.id.enrollButton);
+        enrollButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                EnrollRestaurantByButtonClick();
+            }
+        });
         return view;
     }
 
@@ -91,47 +109,13 @@ public class GoogleMapFragment extends Fragment
         dbHelper = new DBHelper(getContext(), null, null, 1);
 
         if (getArguments() != null) {
-            Restaurant restaurant = getArguments().getParcelable("RESTAURANT");
+            enrollRestaurant = getArguments().getParcelable("RESTAURANT");
             // 입력한 주소를 지오코딩으로 변환이 가능한지 체크한다.
-            existCheckLocation(restaurant);
+            if(existCheckLocation(enrollRestaurant)){
+                restaurantExist = true;
+            }
         }
         mapSetting();
-    }
-
-    public void mapSetting() {
-        mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map);
-//        Log.d("MapFragment", mapFragment + "");
-        mapFragment.getMapAsync(this);
-    }
-
-    public void existCheckLocation(Restaurant restaurant) {
-        String restaurantAddress = null;
-
-        if (restaurant != null) {
-            restaurantAddress = restaurant.getAddress();
-        } else
-            return;
-
-        try {
-            List addressList = geocoder.getFromLocationName(restaurantAddress, 5);
-
-            // 지오코딩을 통해 가져온 게 있으면 제일 앞의 것을 써주자.
-            if (addressList.size() > 0) {
-                dbHelper.addRestaurant(restaurant);
-            }
-            // 지오코딩으로 가져오는게 없을 때.
-            else {
-                Toast.makeText(getContext(), "지오코딩 변환 실패, 가장 마지막에 등록한 맛집으로 이동합니다.", Toast.LENGTH_SHORT).show();
-            }
-
-        } catch (Exception e) {
-            Log.e("Error", e + " ");
-        }
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
     }
 
     // 마커 있으면 다 달아주자. DB에서 꺼내서!
@@ -140,26 +124,53 @@ public class GoogleMapFragment extends Fragment
         Log.d("시발", "맵 뜬다");
         this.googleMap = googleMap;
 
+        // 퍼미션이 있어야 맵을 띄워줄 수가 있게하자.
         permissonCheck();
 
         Cursor cursor = dbHelper.findAll();
         // 여기에 DB에서 꺼내서 마크 달아주자.
         addMarkerAll(cursor);
 
+        ///// 앱 첫 실행해서 입력받은 레스토랑 마커와 텍스트뷰 처리하는 부분.
+        Address address = null;
+        // 여기서 좌표 변환이 필요함.
+        try {
+            List addressList = geocoder.getFromLocationName(enrollRestaurant.getAddress(), 5);
+            address = (Address) addressList.get(0);
+        } catch (Exception e) {
+            Log.e("Error", e + " ");
+        }
+        if(address != null){
+            LatLng latLng = new LatLng(address.getLatitude(), address.getLongitude());
+
+            MarkerOptions markerOptions = new MarkerOptions();
+            markerOptions.position(latLng);
+            markerOptions.title(enrollRestaurant.getName());
+            markerOptions.snippet(enrollRestaurant.getReply());
+            markerOptions.draggable(true);
+
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
+            Marker marker = googleMap.addMarker(markerOptions);
+            marker.showInfoWindow();
+            mapText.setText(enrollRestaurant.getAddress());
+        }
+        ///// 앱 첫 실행해서 입력받은 레스토랑 마커와 텍스트뷰 처리하는 부분.
+
         // 클릭 리스너 달아주자.
         googleMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
                 Log.d("맵 클릭", latLng + " ");
-                mapClick(latLng);
+//                mapClick(latLng);
+                mapFragmentListener.MapClickEnroll(latLng);
             }
         });
 
         // 마커 드래그 이벤트. 추가 기능으로 해주자.
         googleMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
+            // 여기서 원래 마커의 정보도 담아두어야 DB에서 갱신할 수 있겠지.
             @Override
             public void onMarkerDragStart(Marker marker) {
-
             }
 
             @Override
@@ -167,24 +178,52 @@ public class GoogleMapFragment extends Fragment
 
             }
 
+            // 여기서 DB 내용 업데이트 해주자.
             @Override
             public void onMarkerDragEnd(Marker marker) {
-
+                changeRestaurant(marker);
             }
         });
-        // 구글맵의 UI 환경 가져온다.
-        uiSettings = googleMap.getUiSettings();
     }
 
+    public void mapSetting() {
+        mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+    }
+
+    public boolean existCheckLocation(Restaurant restaurant) {
+        String restaurantAddress = null;
+
+        if (restaurant != null) {
+            restaurantAddress = restaurant.getAddress();
+        } else
+            return false;
+
+        try {
+            List addressList = geocoder.getFromLocationName(restaurantAddress, 5);
+
+            // 지오코딩을 통해 가져온 게 있으면 제일 앞의 것을 써주자.
+            if (addressList.size() > 0) {
+                Toast.makeText(getContext(), "등록을 위해서는 다음 버튼을 클릭해 주세요.", Toast.LENGTH_LONG).show();
+                return true;
+            }
+            // 지오코딩으로 가져오는게 없을 때.
+            else {
+                Toast.makeText(getContext(), "가장 마지막에 등록한 맛집으로 이동합니다.", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+        } catch (Exception e) {
+            Log.e("Error", e + " ");
+        }
+        return false;
+    }
 
     public void permissonCheck() {
-        // 현재 위치 중심으로.
-        // 현재 내 위치 중심으로.
         // 퍼미션 체크. 권한이 있는 경우.
         // 현재 안드로이드 버전이 마시멜로 이상인 경우 퍼미션 체크가 추가로 필요함.
         Log.d("내 버전 정보", Build.VERSION.SDK_INT + " ");
-        Log.d("마시멜로 정보", Build.VERSION_CODES.M + " ");
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        Log.d("마시멜로 정보", M + " ");
+        if (Build.VERSION.SDK_INT >= M) {
             // 퍼미션이 없는 경우 퍼미션을 요구해야겠지?
             if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
                     == PackageManager.PERMISSION_DENIED) {
@@ -261,42 +300,46 @@ public class GoogleMapFragment extends Fragment
         }
     }
 
-
-    // 맵 클릭하면 위치 정보가 전달.
+    // 등록 버튼을 눌렀을 때.
     @Override
-    public void mapClick(LatLng latLng) {
-        Address address = null;
+    public void EnrollRestaurantByButtonClick() {
+        addRestaurantToDB();
+    }
 
-        // 지오코더 사용.
+    // 클릭했을 때 호출.
+    public void addRestaurantToDB(){
+        if(restaurantExist == true){
+            Toast.makeText(getContext(), "정상적으로 등록되었습니다.", Toast.LENGTH_SHORT).show();
+            dbHelper.addRestaurant(enrollRestaurant);
+            restaurantExist = false;
+            mapFragmentListener.AfterEnrollButtonClick();
+        }
+        // 이런 경우는 없겠지만.
+        else{
+            Toast.makeText(getContext(), "맛집을 등록할 수 없습니다.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // 마커 드래그 이벤트.
+    public void changeRestaurant(Marker marker){
+        Address afterAddress = null;
+        // 변경된 마커 위치.
+        LatLng latLng = marker.getPosition();
+
+        // 변경된 마커의 좌표로 지오코딩.
         try {
             List<Address> addressList = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 5);
             if (addressList != null) {
                 // 처음 것을 이용한다.
-                address = addressList.get(0);
-                // 맛집 등록 창으로 전환.
-                showEnrollFragment(address);
+                afterAddress = addressList.get(0);
+
+                // 변경되는 창을 띄워주자.
+                enrollRestaurant.setAddress(afterAddress.toString());
+                mapText.setText(afterAddress.getAddressLine(0));
+                mapFragmentListener.AfterMarkerDrag(afterAddress);
             }
         } catch (Exception e) {
             Log.e("Exception 발생", e + " ");
         }
-
-    }
-
-    // 창 새로 띄워주자.
-    public void showEnrollFragment(Address address) {
-        Log.d("화면 전환", " 등록 창으로 넘어가자");
-
-        EnrollFragment enrollFragment = EnrollFragment.newInstance(address);
-//        Toast.makeText(getContext(), "프래그먼트 바꿔줘야지", Toast.LENGTH_SHORT).show();
-        //백버튼 눌렀을 때 처리가 추가로 필요할 듯.
-        FragmentManager fragmentManager = getFragmentManager();
-        // 현재 붙어 있는 프래그먼트 가져온다.
-        Fragment fragment = fragmentManager.findFragmentById(FRAGMENT_CONTATINER);
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        Log.d("Fragment", fragment.toString());
-
-        fragmentTransaction.replace(FRAGMENT_CONTATINER, enrollFragment);
-        fragmentTransaction.addToBackStack(null);
-        fragmentTransaction.commit();
     }
 }

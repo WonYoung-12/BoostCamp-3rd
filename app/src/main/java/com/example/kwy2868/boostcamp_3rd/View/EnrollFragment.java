@@ -1,12 +1,11 @@
 package com.example.kwy2868.boostcamp_3rd.View;
 
+import android.content.Context;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -16,6 +15,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.kwy2868.boostcamp_3rd.DB.DBHelper;
 import com.example.kwy2868.boostcamp_3rd.Model.Restaurant;
@@ -49,13 +49,41 @@ public class EnrollFragment extends Fragment implements TextWatcher {
     Button nextButton;
 
     private Unbinder unbinder;
-    private static String TAG = "LOCATION";
+    private static String TAG = "ADDRESS";
     private static final int FRAGMENT_CONTATINER = R.id.fragment_show;
 
     private Geocoder geocoder;
     private Address address;
 
     private static DBHelper dbHelper;
+
+    RestaurantEnrollListener enrollListener;
+
+    // 이렇게 해야 프래그먼트 독립적으로 사용할 수 있다더라.
+    public interface RestaurantEnrollListener{
+        void RestaurantEnroll(Restaurant restaurant);
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        if(context instanceof RestaurantEnrollListener)
+            enrollListener = (RestaurantEnrollListener)context;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (getArguments() != null) {
+            address = getArguments().getParcelable(TAG);
+            Log.d("위치 잘 받아온다.", address + " ");
+            restaurantAddress.setText(address.getAddressLine(0).toString());
+        }
+    }
+
+    public EnrollFragment() {
+        Log.d("등록 프로그먼트 생성", "씨발");
+    }
 
     public static EnrollFragment newInstance(Address address) {
         EnrollFragment enrollFragment = new EnrollFragment();
@@ -65,7 +93,6 @@ public class EnrollFragment extends Fragment implements TextWatcher {
 
         return enrollFragment;
     }
-
 
     @Nullable
     @Override
@@ -81,14 +108,6 @@ public class EnrollFragment extends Fragment implements TextWatcher {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         dbHelper = new DBHelper(getContext(), null, null, 1);
-
-        // 전달받는 내용이 있으면.
-        // 근데 이제 이거 필요없음.
-        if (getArguments() != null) {
-            address = getArguments().getParcelable(TAG);
-            Log.d("위치 잘 받아온다.", address + " ");
-            restaurantAddress.setText(address.getAddressLine(0).toString());
-        }
     }
 
     @Override
@@ -100,6 +119,7 @@ public class EnrollFragment extends Fragment implements TextWatcher {
     // 맛집 정보 등록을 위해 다음 버튼을 눌렀을 때.
     // 등록 하면 다시 맵 프래그먼트로 돌아가야겠지.
     // DB에도 데이터 넣어주고.
+
     @OnClick(R.id.next_btn)
     void enroll() {
         Log.d("등록한다", "등록을 하자");
@@ -110,27 +130,12 @@ public class EnrollFragment extends Fragment implements TextWatcher {
         String rNumber = restaurantNumber.getText().toString();
         String rReply = restaurantReply.getText().toString();
         // 하나라도 빈칸 있을 때 예외처리. 테스트를 위해 일단은 풀어두자.
-//        if ( (rName.equals("")) || (rAddress.equals("")) || (rNumber.equals("")) || (rReply.equals("")) ) {
-//            Toast.makeText(getContext(), "모든 항목을 바르게 입력하여 주세요.", Toast.LENGTH_SHORT).show();
-//        } else {
+        if ( (rName.equals("")) || (rAddress.equals("")) || (rNumber.equals("")) || (rReply.equals("")) ) {
+            Toast.makeText(getContext(), "모든 항목을 바르게 입력하여 주세요.", Toast.LENGTH_SHORT).show();
+        } else {
             Restaurant restaurant = new Restaurant(rName, rAddress, rNumber, rReply);
-            showMapFragment(restaurant);
-//        }
-//        Toast.makeText(getContext(), "등록한다", Toast.LENGTH_SHORT).show();
-    }
-
-    public void showMapFragment(Restaurant restaurant) {
-        // DB에서 꺼내오는 거면 사실상 이거도 필요 없을 것 같긴하다..?
-        GoogleMapFragment googleMapFragment = GoogleMapFragment.newInstance(restaurant);
-//        Toast.makeText(getContext(), "프래그먼트 바꿔줘야지", Toast.LENGTH_SHORT).show();
-        FragmentManager fragmentManager = getFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.replace(FRAGMENT_CONTATINER, googleMapFragment, "LOCATION");
-        fragmentTransaction.addToBackStack(null);
-        fragmentTransaction.commit();
-    }
-
-    public void updateRestaurantList() {
+            enrollListener.RestaurantEnroll(restaurant);
+        }
     }
 
     @Override
