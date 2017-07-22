@@ -53,11 +53,6 @@ public class DBHelper extends SQLiteOpenHelper {
         database.close();
     }
 
-    public void changeRestaurant(Restaurant restaurant){
-
-    }
-
-
     public Cursor findAll(){
         String query = "select * from " + DATABASE_TABLE;
         SQLiteDatabase database = this.getWritableDatabase();

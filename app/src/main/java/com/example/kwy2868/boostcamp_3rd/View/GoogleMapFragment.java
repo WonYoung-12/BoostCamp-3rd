@@ -56,8 +56,6 @@ public class GoogleMapFragment extends Fragment
 
     private TextView mapText;
 
-    private static final int FRAGMENT_CONTATINER = R.id.fragment_show;
-
     private Geocoder geocoder;
 
     private static DBHelper dbHelper;
