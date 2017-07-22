@@ -11,7 +11,6 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -70,17 +69,6 @@ public class MainActivity extends AppCompatActivity
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setTitle(R.string.project_name);
         attachEnrollFragment();
-    }
-
-    // 이거 오버라이딩해서 하면 바로 종료 안시키고 토스트 메시지 띄우고 잘 되지않을까.
-    @Override
-    public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
     }
 
     @OnClick(R.id.close)
@@ -147,7 +135,6 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void RestaurantEnroll(Restaurant restaurant) {
-//        enrollFragment.showMapFragment(restaurant);
         // DB에서 꺼내오는 거면 사실상 이거도 필요 없을 것 같긴하다..?
         Bundle bundle = new Bundle();
         bundle.putParcelable("RESTAURANT", restaurant);
@@ -161,7 +148,6 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void MapClickEnroll(LatLng latLng) {
-
         Address address = null;
 
         // 지오코더 사용해서 좌표를 바꿔준다.
@@ -196,7 +182,6 @@ public class MainActivity extends AppCompatActivity
         FragmentManager fragmentManager = getSupportFragmentManager();
         // 현재 붙어 있는 프래그먼트 가져온다.
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-
         fragmentTransaction.replace(FRAGMENT_CONTATINER, enrollFragment);
         fragmentTransaction.addToBackStack(null);
         fragmentTransaction.commit();

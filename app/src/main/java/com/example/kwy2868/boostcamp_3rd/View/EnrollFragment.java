@@ -2,7 +2,6 @@ package com.example.kwy2868.boostcamp_3rd.View;
 
 import android.content.Context;
 import android.location.Address;
-import android.location.Geocoder;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -16,7 +15,6 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.kwy2868.boostcamp_3rd.DB.DBHelper;
 import com.example.kwy2868.boostcamp_3rd.Model.Restaurant;
 import com.example.kwy2868.boostcamp_3rd.R;
 
@@ -49,12 +47,8 @@ public class EnrollFragment extends Fragment implements TextWatcher {
 
     private Unbinder unbinder;
     private static String TAG = "ADDRESS";
-    private static final int FRAGMENT_CONTATINER = R.id.fragment_show;
 
-    private Geocoder geocoder;
     private Address address;
-
-    private static DBHelper dbHelper;
 
     RestaurantEnrollListener enrollListener;
 
@@ -92,7 +86,6 @@ public class EnrollFragment extends Fragment implements TextWatcher {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        dbHelper = new DBHelper(getContext(), null, null, 1);
     }
 
     @Override
@@ -104,10 +97,8 @@ public class EnrollFragment extends Fragment implements TextWatcher {
     // 맛집 정보 등록을 위해 다음 버튼을 눌렀을 때.
     // 등록 하면 다시 맵 프래그먼트로 돌아가야겠지.
     // DB에도 데이터 넣어주고.
-
     @OnClick(R.id.next_btn)
     void enroll() {
-
         // 입력한 맛집 정보들.
         String rName = restaurantName.getText().toString();
         String rAddress = restaurantAddress.getText().toString();
