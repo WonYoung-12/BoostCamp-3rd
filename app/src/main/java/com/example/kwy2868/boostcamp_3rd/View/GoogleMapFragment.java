@@ -309,6 +309,8 @@ public class GoogleMapFragment extends Fragment
 
     // 마커 드래그 이벤트.
     public void changeRestaurant(Marker marker){
+        // 이거 안하면 저장 되어있는 값 때문에 마커가 두개씩 찍힘.
+        marker.remove();
         Address afterAddress = null;
         // 변경된 마커 위치.
         LatLng latLng = marker.getPosition();

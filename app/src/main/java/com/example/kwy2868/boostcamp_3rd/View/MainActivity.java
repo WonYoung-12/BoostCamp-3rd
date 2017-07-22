@@ -30,7 +30,7 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 public class MainActivity extends AppCompatActivity
-        implements EnrollFragment.RestaurantEnrollListener, GoogleMapFragment.MapFragmentListener{
+        implements EnrollFragment.RestaurantEnrollListener, GoogleMapFragment.MapFragmentListener {
     @BindView(R.id.toolbar)
     Toolbar toolbar;
     @BindView(R.id.drawer_layout)
@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity
         init();
     }
 
-    public void init(){
+    public void init() {
         ButterKnife.bind(this);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -72,7 +72,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     @OnClick(R.id.close)
-    public void finishApp(){
+    public void finishApp() {
         finish();
     }
 
@@ -82,17 +82,17 @@ public class MainActivity extends AppCompatActivity
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         // requestPermission 메소드의 requestCode와 일치하는지 확인.
-        if(requestCode == REQUEST_CODE){
+        if (requestCode == REQUEST_CODE) {
             Log.d("퍼미션 요구", "퍼미션 요구");
             // 요구하는 퍼미션이 한개이기 때문에 하나만 확인한다.
             // 해당 퍼미션이 승낙된 경우.
-            if(grantResults[0] == PackageManager.PERMISSION_GRANTED){
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Log.d("퍼미션 승인", "퍼미션 승인");
-                if(googleMapFragment != null)
+                if (googleMapFragment != null)
                     googleMapFragment.permissonCheck();
             }
             // 해당 퍼미션이 거절된 경우.
-            else{
+            else {
                 Log.d("퍼미션 거절", "퍼미션 거절");
                 Toast.makeText(this, "퍼미션을 승인 해주셔야 이용이 가능합니다", Toast.LENGTH_SHORT).show();
                 finish();
@@ -122,7 +122,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     // 사용자에게 설정 창으로 넘어가게 하여 퍼미션 설정하도록 유도.
-    public void requestPermissionInSettings(){
+    public void requestPermissionInSettings() {
         Intent intent = new Intent();
         intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
         intent.addCategory(Intent.CATEGORY_DEFAULT);
@@ -139,11 +139,7 @@ public class MainActivity extends AppCompatActivity
         Bundle bundle = new Bundle();
         bundle.putParcelable("RESTAURANT", restaurant);
         googleMapFragment.setArguments(bundle);
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.replace(FRAGMENT_CONTATINER, googleMapFragment);
-        fragmentTransaction.addToBackStack(null);
-        fragmentTransaction.commit();
+        changeFragment(googleMapFragment);
     }
 
     @Override
@@ -164,39 +160,24 @@ public class MainActivity extends AppCompatActivity
         Bundle bundle = new Bundle();
         bundle.putParcelable(TAG, address);
         enrollFragment.setArguments(bundle);
-        // 백버튼 눌렀을 때 처리가 추가로 필요할 듯.
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        // 현재 붙어 있는 프래그먼트 가져온다.
-        Fragment fragment = fragmentManager.findFragmentById(FRAGMENT_CONTATINER);
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        Log.d("Fragment", fragment.toString());
-
-        fragmentTransaction.replace(FRAGMENT_CONTATINER, enrollFragment);
-        fragmentTransaction.addToBackStack(null);
-        fragmentTransaction.commit();
+        changeFragment(enrollFragment);
     }
 
     @Override
     public void AfterEnrollButtonClick() {
         Toast.makeText(this, "다른 맛집을 등록하시겠습니까?", Toast.LENGTH_LONG).show();
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        // 현재 붙어 있는 프래그먼트 가져온다.
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.replace(FRAGMENT_CONTATINER, enrollFragment);
-        fragmentTransaction.addToBackStack(null);
-        fragmentTransaction.commit();
+        changeFragment(enrollFragment);
     }
 
     @Override
     public void AfterMarkerDrag(Address address) {
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        // 현재 붙어 있는 프래그먼트 가져온다.
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         Bundle bundle = new Bundle();
         bundle.putParcelable(TAG, address);
         enrollFragment.setArguments(bundle);
-        fragmentTransaction.replace(FRAGMENT_CONTATINER, enrollFragment);
-        fragmentTransaction.addToBackStack(null);
-        fragmentTransaction.commit();
+        changeFragment(enrollFragment);
+    }
+
+    public void changeFragment(Fragment fragment) {
+        fragmentManager.beginTransaction().replace(FRAGMENT_CONTATINER, fragment).addToBackStack(null).commit();
     }
 }
