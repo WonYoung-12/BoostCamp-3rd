@@ -76,10 +76,6 @@ public class GoogleMapFragment extends Fragment
 
     MapFragmentListener mapFragmentListener;
 
-    public GoogleMapFragment() {
-        Log.d("맵 프로그먼트 생성", "씨발");
-    }
-
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
@@ -121,7 +117,6 @@ public class GoogleMapFragment extends Fragment
     // 마커 있으면 다 달아주자. DB에서 꺼내서!
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        Log.d("시발", "맵 뜬다");
         this.googleMap = googleMap;
 
         // 퍼미션이 있어야 맵을 띄워줄 수가 있게하자.
@@ -160,8 +155,6 @@ public class GoogleMapFragment extends Fragment
         googleMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
-                Log.d("맵 클릭", latLng + " ");
-//                mapClick(latLng);
                 mapFragmentListener.MapClickEnroll(latLng);
             }
         });
@@ -267,8 +260,6 @@ public class GoogleMapFragment extends Fragment
                 address = (Address) addressList.get(0);
                 latitude = address.getLatitude();
                 longitude = address.getLongitude();
-                Log.d("Latitude 널 테스트", latitude.toString());
-                Log.d("Longitude 널 테스트", longitude.toString());
             } catch (Exception e) {
                 Log.e("Error", e + " ");
             }
@@ -276,7 +267,6 @@ public class GoogleMapFragment extends Fragment
             // 변화 없으면 문제가 생긴 거겠지?
             // 근데 이러한 경우는 없을듯 함 이제는!
             if (latitude == 0. && longitude == 0.) {
-                Log.d("변화가 왜 없을까", latitude + ", " + longitude);
             } else {
                 LatLng latLng = new LatLng(latitude, longitude);
 
@@ -293,7 +283,6 @@ public class GoogleMapFragment extends Fragment
                     // 마지막 등록한 마커 띄워준다.
                     marker.showInfoWindow();
                     // 텍스트뷰에 주소 뿌려준다.
-                    Log.d("Map상의 텍스트뷰 널 테스트", mapText + "");
                     mapText.setText(restaurantAddress + "");
                 }
             }

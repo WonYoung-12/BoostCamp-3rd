@@ -8,7 +8,6 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -76,22 +75,8 @@ public class EnrollFragment extends Fragment implements TextWatcher {
         super.onResume();
         if (getArguments() != null) {
             address = getArguments().getParcelable(TAG);
-            Log.d("위치 잘 받아온다.", address + " ");
             restaurantAddress.setText(address.getAddressLine(0).toString());
         }
-    }
-
-    public EnrollFragment() {
-        Log.d("등록 프로그먼트 생성", "씨발");
-    }
-
-    public static EnrollFragment newInstance(Address address) {
-        EnrollFragment enrollFragment = new EnrollFragment();
-        Bundle bundle = new Bundle();
-        bundle.putParcelable(TAG, address);
-        enrollFragment.setArguments(bundle);
-
-        return enrollFragment;
     }
 
     @Nullable
@@ -122,7 +107,6 @@ public class EnrollFragment extends Fragment implements TextWatcher {
 
     @OnClick(R.id.next_btn)
     void enroll() {
-        Log.d("등록한다", "등록을 하자");
 
         // 입력한 맛집 정보들.
         String rName = restaurantName.getText().toString();

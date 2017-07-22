@@ -122,16 +122,12 @@ public class MainActivity extends AppCompatActivity
         // 여기가 널 떠.
         fragment = fragmentManager.findFragmentById(FRAGMENT_CONTATINER);
         // 당연히 아무것도 안 붙어 있어야지.
-//        Log.d("Fragment 잘 있나", fragment+" ");
 
         fragmentTransaction = fragmentManager.beginTransaction();
 
         // 일단은 만들어주자.
         enrollFragment = new EnrollFragment();
         googleMapFragment = new GoogleMapFragment();
-
-        // 배열에 담아 놓고 나중에 리턴해줄까?
-//        fragmentArray[MAP_FRAGMENT] = googleMapFragment;
 
         fragmentTransaction.add(FRAGMENT_CONTATINER, enrollFragment);
         fragmentTransaction.commit();
@@ -151,13 +147,11 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void RestaurantEnroll(Restaurant restaurant) {
-        Log.d("레스토랑등록 리스너 테스트", "잘 된다.");
 //        enrollFragment.showMapFragment(restaurant);
         // DB에서 꺼내오는 거면 사실상 이거도 필요 없을 것 같긴하다..?
         Bundle bundle = new Bundle();
         bundle.putParcelable("RESTAURANT", restaurant);
         googleMapFragment.setArguments(bundle);
-//        Toast.makeText(getContext(), "프래그먼트 바꿔줘야지", Toast.LENGTH_SHORT).show();
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(FRAGMENT_CONTATINER, googleMapFragment);
